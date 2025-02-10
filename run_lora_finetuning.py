@@ -19,8 +19,7 @@ from torch.cuda.amp import GradScaler, autocast
 from transformers import get_cosine_schedule_with_warmup
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--data_cache_dir")
-parser.add_argument("--dataset_name")
+parser.add_argument("--data_version")
 parser.add_argument("--lm_name")
 parser.add_argument("--lm_size")
 parser.add_argument("--lm_cache_dir")
@@ -38,12 +37,13 @@ parser.add_argument("--max_grad_norm", type=float, default=1.0)
 parser.add_argument("--lora_r", type=int, default=8)
 parser.add_argument("--lora_alpha", type=int, default=16)
 parser.add_argument("--lora_dropout", type=float, default=0.05)
+parser.add_argument("--prompt_version", type=str, default='general')
 args = parser.parse_args()
 flags = OmegaConf.create(vars(args))
 
 # == Seed ==
 set_seed(flags.seed)
-flags.save_dir = f"outputs/lora_finetuning/{flags.dataset_name}/" \
+flags.save_dir = f"outputs/lora_finetuning/{flags.data_version}/" \
                 + f"{flags.lm_name}_{flags.lm_size}/seed_{flags.seed}"
 
 if not os.path.exists(flags.save_dir):
@@ -66,12 +66,11 @@ from nlp_models import get_general_model
 llm, tokenizer = get_general_model(**llm_config)
 # ========================================================================================
 from lora_dataset import get_lora_dataset
-train_dataloader, test_dataloader = get_lora_dataset(flags.data_cache_dir, 
-                                                     tokenizer, 
-                                                     flags.batch_size, 
-                                                     flags.seed)
-
-
+train_dataloader, test_dataloader = get_lora_dataset(flags.data_version, 
+                                                    flags.prompt_version, 
+                                                    tokenizer, 
+                                                    flags.batch_size, 
+                                                    flags.seed)
 
 # == Prepare model for LoRA ==
 model = LoRaWrapper(llm, tokenizer)

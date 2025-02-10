@@ -1,4 +1,5 @@
 import datasets 
+import pandas as pd 
 from torch.utils.data import DataLoader
 from transformers import default_data_collator
 def get_tokenized_dataset(dataset, tokenizer, batch_size, num_proc=None, 
@@ -50,13 +51,83 @@ def get_dataloder_from_dataset(dataset, batch_size, shuffle=False):
                                             pin_memory=True)
     return dataloader
 
-def get_lora_dataset(data_cache_dir, tokenizer, batch_size, seed, stopping_word = "<stop>"):
-    prompt = "The answer to the question is:"
+
+def get_prompts(data_version, prompt_version, modal_verb, train_label=''):
+    csv = pd.read_csv(f"data/test_dataset{data_version}_all.csv")
+    if data_version == '2':
+        contexts = None 
+    else:
+        contexts = csv['context']
+    inputs = csv[modal_verb]
+    
+    if contexts is None: 
+        # General
+        if prompt_version == 'general':
+            prompts = [
+            f"Determine if the following sentence is deontic by considering the semantic meaning.\n"
+            "Answer with 1 if it's a deontic sentence, 0 if not.you must answer with 1 or 0.\n\n"
+            f"Sentence: {inp}\n\nAnswer: {train_label}"
+            for inp in inputs
+            ]
+        elif prompt_version == 'explicit':
+            # Explicit
+            prompts = [
+                f"Determine whether the following sentence is an obligation based on its semantic meaning.\n"
+                "Answer with 1 if it's a obligation sentence, 0 if not. you must answer with 1 or 0.\n\n"
+                f"Sentence: {inp}\n\nAnswer: {train_label}"
+                for inp in inputs
+            ]
+
+        elif prompt_version == 'strict':
+            # Strict
+            prompts = [
+                f"Determine whether this sentence mandates compliance in all cases by considering the semantic meaning.\n"
+                "Answer with 1 if it conveys a mandatory requirement, 0 if not. You must answer with 1 or 0.\n\n"
+                f"Sentence: {inp}\n\nAnswer: {train_label}"
+                for inp in inputs
+        ]
+    else:
+        if prompt_version == 'general':
+            # General
+            prompts = [
+                f"Determine if the following sentence is deontic by considering the context and the semantic meaning.\n"
+                "Answer with 1 if it's a deontic sentence, 0 if not.you must answer with 1 or 0.\n\n"
+                f"Sentence: Context: {ctx}\nInput: {inp}\n\nAnswer: {train_label}"
+                for ctx, inp in zip(contexts, inputs)
+            ]
+        elif prompt_version == 'explicit':
+            # Explicit
+            prompts = [
+                f"Determine whether the following sentence is an obligation based on its context and semantic meaning.\n"
+                "Answer with 1 if it's a obligation sentence, 0 if not. you must answer with 1 or 0.\n\n"
+                f"Sentence: Context: {ctx}\nInput: {inp}\n\nAnswer: {train_label}"
+                for ctx, inp in zip(contexts, inputs)
+            ]
+        elif prompt_version == 'strict':
+            # Strict
+            prompts = [
+                f"Determine whether this sentence mandates compliance in all cases by considering the context and the semantic meaning.\n"
+                "Answer with 1 if it conveys a mandatory requirement, 0 if not. You must answer with 1 or 0.\n\n"
+                f"Sentence: Context: {ctx}\nInput: {inp}\n\nAnswer: {train_label}"
+                for ctx, inp in zip(contexts, inputs)
+            ]
+
+    return prompts
+
+def get_lora_dataset(data_version, prompt_version, tokenizer, batch_size, seed, stopping_word = "<stop>"):
+    if data_version == "1":
+        train_label = 1
+    else:
+        train_label = 0
+    # generation_prompt = get_prompts(data_version, prompt_version, 'none') 
+    train_prompts = get_prompts(data_version, prompt_version, 'strong', train_label=train_label)
+    test_prompts  = get_prompts(data_version, prompt_version, 'strong',)
+    
     train_dic = {
-        'text': [ prompt + " " + str(x) + " " + stopping_word for x in range(30) ],
+        'text': train_prompts
     }
     test_dic = {
-        'text': [ prompt + " " + str(x) + " " + stopping_word for x in range(30) ],
+        'text': test_prompts
     }
     
     train_dataset = datasets.Dataset.from_dict(train_dic)
@@ -64,6 +135,7 @@ def get_lora_dataset(data_cache_dir, tokenizer, batch_size, seed, stopping_word 
     
     tokenized_train = get_tokenized_dataset(train_dataset, tokenizer, batch_size)
     tokenized_test = get_tokenized_dataset(test_dataset, tokenizer, batch_size)
+    
     train_dataloader = get_dataloder_from_dataset(tokenized_train, batch_size)
     test_dataloader = get_dataloder_from_dataset(tokenized_test, batch_size)
     
