@@ -29,14 +29,11 @@ args = parser.parse_args()
 flags = OmegaConf.create(vars(args))
 
 
-label_type = args.lora_weights_path.split('/')[-3]
-print(label_type)
-
 # == Seed ==
 set_seed(flags.seed)
 checkpoint = flags.lora_weights_path.split('/')[-1]
-flags.save_dir = f"outputs/lora_inference/{flags.dataset_name}/{flags.prompt_type}/" \
-                + f"{flags.lm_name}_{flags.lm_size}/{label_type}/{checkpoint}/seed_{flags.seed}"
+flags.save_dir = f"outputs/lora_inference/{flags.dataset_name}/" \
+                + f"{flags.lm_name}_{flags.lm_size}/{checkpoint}/seed_{flags.seed}"
 
 if not os.path.exists(flags.save_dir):
     os.makedirs(flags.save_dir)
@@ -73,14 +70,7 @@ stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(tokenizer, stops=s
 
 pbar = tqdm(test_dataloader, total=len(test_dataloader))
 pbar.set_description("Running inference with LoRA")
-max_new_tokens = {
-    'base': 50,
-    'zero_shot_cot': 500,
-    'bayesian': 500,    
-    'markov': 500,
-    'simple_markov': 500,
-    'simple_bayesian': 500,
-}[flags.prompt_type]
+max_new_tokens = 20
 
 with torch.no_grad():
     for j ,batch in enumerate(pbar):
@@ -99,19 +89,16 @@ with torch.no_grad():
         
         for i, output in enumerate(outputs):
             prediction = tokenizer.decode(output[input_ids.shape[-1]:], skip_special_tokens=True)
-            label = tokenizer.decode(batch['labels'][i], skip_special_tokens=True)
             all_predictions.append(prediction)
-            all_labels.append(label)
             
             # Print some examples
             if i == 0:  # Print first example from each batch
                 print("\nExample prediction:")
-                print(f"Label: {label}")
                 print(f"Prediction: {prediction[-20:]}")
                 print("-" * 50)
 
         if j % 50 == 0:
-            results = [{'label': label, 'prediction': prediction} for (label, prediction) in zip(all_labels, all_predictions)]
+            results = [{'prediction': prediction} for (prediction) in zip(all_predictions)]
             results_path = os.path.join(flags.save_dir, f'inference_results.json')
             with open(results_path, 'w') as f:
                 json.dump(results, f, indent=4)
@@ -119,7 +106,7 @@ with torch.no_grad():
             print(f"\nResults saved to {results_path}")
 
 # Save results
-results = [{'label': label, 'prediction': prediction} for (label, prediction) in zip(all_labels, all_predictions)]
+results = [{'prediction': prediction} for (prediction) in zip(all_predictions)]
 results_path = os.path.join(flags.save_dir, 'inference_results.json')
 with open(results_path, 'w') as f:
     json.dump(results, f, indent=4)

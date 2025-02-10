@@ -20,7 +20,6 @@ from transformers import get_cosine_schedule_with_warmup
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_cache_dir")
-parser.add_argument("--prompt_type")
 parser.add_argument("--dataset_name")
 parser.add_argument("--lm_name")
 parser.add_argument("--lm_size")
@@ -39,14 +38,13 @@ parser.add_argument("--max_grad_norm", type=float, default=1.0)
 parser.add_argument("--lora_r", type=int, default=8)
 parser.add_argument("--lora_alpha", type=int, default=16)
 parser.add_argument("--lora_dropout", type=float, default=0.05)
-parser.add_argument("--lora_label_type", type=str, default="self_correction")
 args = parser.parse_args()
 flags = OmegaConf.create(vars(args))
 
 # == Seed ==
 set_seed(flags.seed)
-flags.save_dir = f"outputs/lora_finetuning/{flags.dataset_name}/{flags.prompt_type}/" \
-                + f"{flags.lm_name}_{flags.lm_size}/{flags.lora_label_type}/seed_{flags.seed}"
+flags.save_dir = f"outputs/lora_finetuning/{flags.dataset_name}/" \
+                + f"{flags.lm_name}_{flags.lm_size}/seed_{flags.seed}"
 
 if not os.path.exists(flags.save_dir):
     os.makedirs(flags.save_dir)

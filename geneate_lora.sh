@@ -7,26 +7,27 @@ BATCH_SIZE=4
 
 # Array of models to test
 declare -a models=(
-    # "llama3_instruct 8b"
+    "llama3_instruct 8b"
     # "exaone 8b"
-    "gemma2 9b"
+    # "gemma2 9b"
     # "gemma2 9b"
     # "llama2_hf 7b"
     # "llama2_chat_hf 7b"
     # "qwen2 7b"
 )
 
+dataset=test
 # Seeds for multiple runs
 declare -a seeds=(42)
-checkpoints=(3 5 10 20) 
+checkpoints=(1) 
 for model in "${models[@]}"; do
     # Split model name and size
     read -r lm_name lm_size <<< "$model"
     for seed in "${seeds[@]}"; do
         for checkpoint in "${checkpoints[@]}"; do 
             echo "Running with model: $lm_name ($lm_size) - seed: $seed - checkpoint: $checkpoint"
-                LORA_WEIGHTS_PATH='outputs/lora_finetuning/'$dataset'/'$prompt_type'/'$lm_name'_'$lm_size'/'$label_type'/seed_'$seed'/checkpoint-epoch-'$checkepoint
-            python scripts/run_lora_inference.py \
+            LORA_WEIGHTS_PATH='outputs/lora_finetuning/'$dataset'/'$lm_name'_'$lm_size'/seed_'$seed'/checkpoint-epoch-'$checkpoint
+            python run_lora_inference.py \
             --data_cache_dir "$DATA_CACHE_DIR" \
             --lm_name "$lm_name" \
             --lm_size "$lm_size" \

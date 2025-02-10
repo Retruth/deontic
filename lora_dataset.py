@@ -53,10 +53,10 @@ def get_dataloder_from_dataset(dataset, batch_size, shuffle=False):
 def get_lora_dataset(data_cache_dir, tokenizer, batch_size, seed, stopping_word = "<stop>"):
     prompt = "The answer to the question is:"
     train_dic = {
-        'text': [ prompt + " " + str(x) + " " + stopping_word for x in range(1000) ],
+        'text': [ prompt + " " + str(x) + " " + stopping_word for x in range(30) ],
     }
     test_dic = {
-        'text': [ prompt + " " + str(x) + " " + stopping_word for x in range(1000) ],
+        'text': [ prompt + " " + str(x) + " " + stopping_word for x in range(30) ],
     }
     
     train_dataset = datasets.Dataset.from_dict(train_dic)

@@ -8,9 +8,9 @@ LM_CACHE_DIR="/data1/bumjin/datahub"
 BATCH_SIZE=2
 LEARNING_RATE=1e-4
 WEIGHT_DECAY=0.01
-NUM_EPOCHS=20
+NUM_EPOCHS=5
 WARMUP_RATIO=0.1
-GRADIENT_ACCUMULATION_STEPS=8
+GRADIENT_ACCUMULATION_STEPS=4
 MAX_GRAD_NORM=0.5 # 1.0 for others 
 
 # LoRA hyperparameters
@@ -21,8 +21,8 @@ LORA_DROPOUT=0.05
 # Array of models to test
 declare -a models=(
     "llama3_instruct 8b"
-    "gemma2 9b"
-    "exaone 8b"
+    # "gemma2 9b"
+    # "exaone 8b"
     # "llama2_hf 7b"
     # "llama2_chat_hf 7b"
     # "gemma1 7b"
@@ -31,6 +31,7 @@ declare -a models=(
     # "llama2_chat_hf 13b"
 )
 
+dataset_name="test"
 # Seeds for multiple runs
 declare -a seeds=(42)
 for model in "${models[@]}"; do
@@ -44,7 +45,7 @@ for model in "${models[@]}"; do
         echo "- Seed: $seed"
         echo "----------------------------------------"
 
-        python scripts/run_lora_finetuning.py \
+        python run_lora_finetuning.py \
         --data_cache_dir "$DATA_CACHE_DIR" \
         --lm_name "$lm_name" \
         --lm_size "$lm_size" \
@@ -59,6 +60,7 @@ for model in "${models[@]}"; do
         --max_grad_norm "$MAX_GRAD_NORM" \
         --lora_r "$LORA_R" \
         --lora_alpha "$LORA_ALPHA" \
-        --lora_dropout "$LORA_DROPOUT"
+        --lora_dropout "$LORA_DROPOUT" \
+        --dataset_name "$dataset_name"
     done
 done
