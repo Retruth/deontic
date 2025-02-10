@@ -64,35 +64,16 @@ llm_config = {
     'lm_cache_dir': flags.lm_cache_dir,
     'device_map': flags.device_map
 }
+from nlp_models import get_general_model
 llm, tokenizer = get_general_model(**llm_config)
 # ========================================================================================
+from lora_dataset import get_lora_dataset
+train_dataloader, test_dataloader = get_lora_dataset(flags.data_cache_dir, 
+                                                     tokenizer, 
+                                                     flags.batch_size, 
+                                                     flags.seed)
 
 
-import json 
-if flags.lora_label_type == "self_correction":
-    with open(f"outputs/binary_classification/{flags.dataset_name}/{flags.prompt_type}/" \
-                + f"{flags.lm_name}_{flags.lm_size}/seed_{flags.seed}/results.json", "r") as f:
-        generated_train_results = json.load(f)
-elif flags.lora_label_type == "openai":
-    lm_name = "openai"
-    lm_size = "gpt-4o-mini"
-    with open(f"outputs/binary_classification/{flags.dataset_name}/{flags.prompt_type}/" \
-                + f"{lm_name}_{lm_size}/seed_{flags.seed}/results.json", "r") as f:
-        generated_train_results = json.load(f)
-
-if flags.dataset_name == "truthful_qa":
-    prompt_fn = get_prompt_fn(flags.prompt_type)
-    train_dataloader, test_dataloader = prepare_truthful_qa(
-        flags.data_cache_dir, 
-        tokenizer, 
-        flags.batch_size, 
-        flags.seed, 
-        prompt_fn,
-        generated_train_results=generated_train_results,
-        generated_train_prompt=flags.prompt_type
-    )
-else:
-    raise ValueError(f"Invalid dataset name: {flags.dataset_name}")
 
 # == Prepare model for LoRA ==
 model = LoRaWrapper(llm, tokenizer)

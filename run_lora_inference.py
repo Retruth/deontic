@@ -9,10 +9,8 @@ import torch
 from tqdm import tqdm
 from omegaconf import OmegaConf
 from peft import PeftModel, PeftConfig
-
-from procllm.data.truthful_qa.prepare import prepare_truthful_qa, get_prompt_fn
-from procllm.nlp_models import get_general_model
-from procllm.utils.set_seed import set_seed
+from nlp_models import get_general_model
+from set_seed import set_seed 
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -58,24 +56,17 @@ base_model, tokenizer = get_general_model(**llm_config)
 model = PeftModel.from_pretrained(base_model, flags.lora_weights_path)
 model.eval()
 
-# == Prepare data ==
-if flags.dataset_name == "truthful_qa":
-    prompt_fn = get_prompt_fn(flags.prompt_type)
-    _, test_dataloader = prepare_truthful_qa(
-        flags.data_cache_dir, 
-        tokenizer, 
-        flags.batch_size, 
-        flags.seed, 
-        prompt_fn
-    )
-else:
-    raise ValueError(f"Invalid dataset name: {flags.dataset_name}")
+from lora_dataset import get_lora_dataset
+train_dataloader, test_dataloader = get_lora_dataset(flags.data_cache_dir, 
+                                                     tokenizer, 
+                                                     flags.batch_size, 
+                                                     flags.seed)
 
 # == Run inference ==
 all_labels = []
 all_predictions = []
 
-from procllm.utils.stopping_criteria import StoppingCriteriaSub
+from stopping_criteria import StoppingCriteriaSub
 from transformers import StoppingCriteriaList
 stops = ['<stop>']
 stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(tokenizer, stops=stops)])
