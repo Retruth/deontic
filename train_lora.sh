@@ -19,13 +19,13 @@ LORA_DROPOUT=0.05
 
 # Array of models to test
 declare -a models=(
+    "gemma2 9b"
     "llama3_instruct 8b"
-    # "gemma2 9b"
+    "qwen2 7b"
     # "exaone 8b"
     # "llama2_hf 7b"
     # "llama2_chat_hf 7b"
     # "gemma1 7b"
-    # "qwen2 7b"
     # "llama2_hf 13b"
     # "llama2_chat_hf 13b"
 )
