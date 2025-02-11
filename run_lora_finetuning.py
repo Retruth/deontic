@@ -44,7 +44,7 @@ flags = OmegaConf.create(vars(args))
 # == Seed ==
 set_seed(flags.seed)
 flags.save_dir = f"outputs/lora_finetuning/{flags.data_version}/" \
-                + f"{flags.lm_name}_{flags.lm_size}/seed_{flags.seed}"
+                + f"{flags.lm_name}_{flags.lm_size}/prompt_version_{flags.prompt_version}/seed_{flags.seed}"
 
 if not os.path.exists(flags.save_dir):
     os.makedirs(flags.save_dir)
