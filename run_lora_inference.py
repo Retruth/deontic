@@ -14,9 +14,7 @@ from set_seed import set_seed
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--data_cache_dir")
-parser.add_argument("--prompt_type")
-parser.add_argument("--dataset_name")
+parser.add_argument("--data_version")
 parser.add_argument("--lm_name")
 parser.add_argument("--lm_size")
 parser.add_argument("--lm_cache_dir")
@@ -24,6 +22,7 @@ parser.add_argument("--device_map", type=str, default="auto")
 parser.add_argument("--batch_size", type=int, default=4)
 parser.add_argument("--seed", type=int)
 parser.add_argument("--lora_weights_path", type=str, help="Path to the trained LoRA weights")
+parser.add_argument("--prompt_version", type=str, default='general')
 
 args = parser.parse_args()
 flags = OmegaConf.create(vars(args))
@@ -32,8 +31,8 @@ flags = OmegaConf.create(vars(args))
 # == Seed ==
 set_seed(flags.seed)
 checkpoint = flags.lora_weights_path.split('/')[-1]
-flags.save_dir = f"outputs/lora_inference/{flags.dataset_name}/" \
-                + f"{flags.lm_name}_{flags.lm_size}/{checkpoint}/seed_{flags.seed}"
+flags.save_dir = f"outputs/lora_inference/{flags.data_version}/" \
+                + f"{flags.lm_name}_{flags.lm_size}/prompt_version_{flags.prompt_version}/seed_{flags.seed}"
 
 if not os.path.exists(flags.save_dir):
     os.makedirs(flags.save_dir)
@@ -54,10 +53,11 @@ model = PeftModel.from_pretrained(base_model, flags.lora_weights_path)
 model.eval()
 
 from lora_dataset import get_lora_dataset
-train_dataloader, test_dataloader = get_lora_dataset(flags.data_cache_dir, 
-                                                     tokenizer, 
-                                                     flags.batch_size, 
-                                                     flags.seed)
+train_dataloader, test_dataloader = get_lora_dataset(flags.data_version, 
+                                                    flags.prompt_version, 
+                                                    tokenizer, 
+                                                    flags.batch_size, 
+                                                    flags.seed)
 
 # == Run inference ==
 all_labels = []
